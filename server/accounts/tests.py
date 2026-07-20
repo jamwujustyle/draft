@@ -33,7 +33,6 @@ class AuthTests(APITestCase):
         # OTPToken is created with client as default role
         otp_token = OTPToken.objects.filter(email="promoter_test@example.com").first()
         self.assertIsNotNone(otp_token)
-        self.assertEqual(otp_token.role, "client")
         self.assertFalse(otp_token.is_used)
 
     def test_passwordless_verify_success_sets_httponly_cookies(self):

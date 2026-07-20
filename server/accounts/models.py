@@ -57,11 +57,6 @@ class User(AbstractUser):
 class OTPToken(models.Model):
     email = models.EmailField()
     code = models.CharField(max_length=6)
-    role = models.CharField(
-        max_length=20,
-        choices=User.Role.choices,
-        default=User.Role.CLIENT
-    )
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     is_used = models.BooleanField(default=False)

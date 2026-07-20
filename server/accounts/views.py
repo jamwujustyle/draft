@@ -82,7 +82,6 @@ class PasswordlessRequestView(APIView):
         OTPToken.objects.create(
             email=email,
             code=code,
-            role='client',
             expires_at=expires_at
         )
 
@@ -152,7 +151,7 @@ class PasswordlessVerifyView(APIView):
         user, created = User.objects.get_or_create(
             email=email,
             defaults={
-                'role': otp_token.role,
+                'role': 'client',
                 'first_name': '',
                 'last_name': ''
             }

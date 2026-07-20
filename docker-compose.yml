@@ -28,19 +28,8 @@ services:
       - ./server:/app
     ports:
       - "8000:8000"
-    environment:
-      - DEBUG=True
-      - SECRET_KEY=django-insecure-f#tjk5jd33!_)24pti7a%-1l0*nbmzoq*&#&4!2h5!6xgzm#t&
-      - DATABASE_URL=postgres://auth_user:auth_password@db:5432/django_auth
-      - GOOGLE_CLIENT_ID=908768559469-jav1ueeapdambje3kabp5t8cfmk56315.apps.googleusercontent.com
-      - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-      - EMAIL_HOST=smtp.resend.com
-      - EMAIL_PORT=465
-      - EMAIL_USE_TLS=False
-      - EMAIL_USE_SSL=True
-      - EMAIL_HOST_USER=resend
-      - EMAIL_HOST_PASSWORD=re_hYaojsga_FBuyZH2wcs7wkogpUdQvnUEo
-      - DEFAULT_FROM_EMAIL=onboarding@resend.dev
+    env_file:
+      - ./server/.env
     depends_on:
       db:
         condition: service_healthy

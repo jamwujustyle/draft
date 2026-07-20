@@ -1,4 +1,6 @@
 python := "/home/lord/soft/miniconda3/envs/django_auth/bin/python"
+# Force SQLite when running locally (overrides DATABASE_URL from .env which points to docker db host)
+local_env := "DATABASE_URL=sqlite:///db.sqlite3"
 
 # List all available recipes
 default:
@@ -22,20 +24,20 @@ logs:
 
 # Run the Django test suite locally (uses SQLite)
 test:
-    cd server && {{python}} manage.py test
+    cd server && {{local_env}} {{python}} manage.py test
 
 # Create new database migrations locally
 makemigrations *args:
-    cd server && {{python}} manage.py makemigrations {{args}}
+    cd server && {{local_env}} {{python}} manage.py makemigrations {{args}}
 
 # Apply database migrations locally
 migrate:
-    cd server && {{python}} manage.py migrate
+    cd server && {{local_env}} {{python}} manage.py migrate
 
 # Run the Django development server locally (runs on port 8000)
 run:
-    cd server && {{python}} manage.py runserver
+    cd server && {{local_env}} {{python}} manage.py runserver
 
 # Open Django Python shell locally
 shell:
-    cd server && {{python}} manage.py shell
+    cd server && {{local_env}} {{python}} manage.py shell
