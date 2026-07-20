@@ -11,6 +11,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_user -d django_auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   web:
     build:
@@ -27,8 +33,8 @@ services:
       - SECRET_KEY=django-insecure-f#tjk5jd33!_)24pti7a%-1l0*nbmzoq*&#&4!2h5!6xgzm#t&
       - DATABASE_URL=postgres://auth_user:auth_password@db:5432/django_auth
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:
-
