@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .models import OTPToken
 from .serializers import (
@@ -60,30 +61,35 @@ def set_auth_cookies(response, tokens):
 class PasswordlessRequestView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=PasswordlessRequestSerializer,
+        responses={200: OpenApiResponse(description='OTP code sent (code returned in DEBUG mode)')},
+        summary='Request passwordless OTP',
+        tags=['auth'],
+    )
     def post(self, request, *args, **kwargs):
         serializer = PasswordlessRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         email = serializer.validated_data['email']
-        role = serializer.validated_data['role']
 
         # Generate a 6-digit verification code
         code = f"{random.randint(100000, 999999)}"
         expires_at = timezone.now() + timedelta(minutes=10)
 
-        # Create the OTP Token record
+        # Create the OTP Token record — role always defaults to client
         OTPToken.objects.create(
             email=email,
             code=code,
-            role=role,
+            role='client',
             expires_at=expires_at
         )
 
         # Send mail via configured Django backend
         subject = "Your Login Verification Code"
         message = f"Your verification code is: {code}\nThis code expires in 10 minutes."
-        
+
         try:
             send_mail(
                 subject,
@@ -110,6 +116,12 @@ class PasswordlessRequestView(APIView):
 class PasswordlessVerifyView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=PasswordlessVerifySerializer,
+        responses={200: UserSerializer},
+        summary='Verify OTP and authenticate',
+        tags=['auth'],
+    )
     def post(self, request, *args, **kwargs):
         serializer = PasswordlessVerifySerializer(data=request.data)
         if not serializer.is_valid():
@@ -151,7 +163,7 @@ class PasswordlessVerifyView(APIView):
             "user": UserSerializer(user).data,
             "is_new_user": created
         }, status=status.HTTP_200_OK)
-        
+
         # Set tokens in HttpOnly cookies
         set_auth_cookies(response, tokens)
         return response
@@ -159,13 +171,19 @@ class PasswordlessVerifyView(APIView):
 class GoogleAuthView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=GoogleAuthSerializer,
+        responses={200: UserSerializer},
+        summary='Google OAuth2 sign-in / sign-up',
+        tags=['auth'],
+    )
     def post(self, request, *args, **kwargs):
         serializer = GoogleAuthSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         credential = serializer.validated_data['credential']
-        role = serializer.validated_data['role']
+        role = 'client'  # Google users always start as clients; role can be upgraded separately
 
         email = None
         first_name = ""
@@ -186,9 +204,9 @@ class GoogleAuthView(APIView):
                         {"error": "Invalid Google credential."},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                
+
                 payload = response.json()
-                
+
                 # Verify audience to prevent token reuse across other apps
                 aud = payload.get("aud")
                 if settings.GOOGLE_CLIENT_ID and aud != settings.GOOGLE_CLIENT_ID:
@@ -200,13 +218,13 @@ class GoogleAuthView(APIView):
                 email = payload.get("email")
                 first_name = payload.get("given_name", "")
                 last_name = payload.get("family_name", "")
-                
+
                 if not email:
                     return Response(
                         {"error": "Email not provided by Google account."},
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                    
+
             except requests.RequestException as e:
                 logger.error(f"Google verification network error: {e}")
                 return Response(
@@ -229,7 +247,7 @@ class GoogleAuthView(APIView):
             "user": UserSerializer(user).data,
             "is_new_user": created
         }, status=status.HTTP_200_OK)
-        
+
         # Set tokens in HttpOnly cookies
         set_auth_cookies(response, tokens)
         return response
@@ -237,6 +255,12 @@ class GoogleAuthView(APIView):
 class CookieTokenRefreshView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=None,
+        responses={200: UserSerializer},
+        summary='Refresh JWT tokens from cookie',
+        tags=['auth'],
+    )
     def post(self, request, *args, **kwargs):
         refresh_token = request.COOKIES.get('refresh_token')
         if not refresh_token:
@@ -250,18 +274,18 @@ class CookieTokenRefreshView(APIView):
             token = RefreshToken(refresh_token)
             user_id = token.payload.get('user_id')
             user = User.objects.get(id=user_id)
-            
+
             # Generate new rotated tokens
             tokens = get_tokens_for_user(user)
-            
+
             response = Response({
                 "user": UserSerializer(user).data
             }, status=status.HTTP_200_OK)
-            
+
             # Set new cookies
             set_auth_cookies(response, tokens)
             return response
-            
+
         except Exception as e:
             logger.error(f"Token refresh failed: {e}")
             return Response(
@@ -272,6 +296,12 @@ class CookieTokenRefreshView(APIView):
 class LogoutView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=None,
+        responses={200: OpenApiResponse(description='Successfully logged out')},
+        summary='Logout and clear cookies',
+        tags=['auth'],
+    )
     def post(self, request, *args, **kwargs):
         response = Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
         response.delete_cookie('access_token')
@@ -281,6 +311,11 @@ class LogoutView(APIView):
 class MeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(
+        responses={200: UserSerializer},
+        summary='Get current authenticated user',
+        tags=['auth'],
+    )
     def get(self, request, *args, **kwargs):
         serializer = UserSerializer(request.user)
         return Response({"user": serializer.data}, status=status.HTTP_200_OK)

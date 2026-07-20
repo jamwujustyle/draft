@@ -11,12 +11,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 class PasswordlessRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    role = serializers.ChoiceField(choices=User.Role.choices, default=User.Role.CLIENT)
 
 class PasswordlessVerifySerializer(serializers.Serializer):
     email = serializers.EmailField()
     code = serializers.CharField(max_length=6, min_length=6)
 
 class GoogleAuthSerializer(serializers.Serializer):
-    credential = serializers.CharField(help_text="Google JWT ID Token")
-    role = serializers.ChoiceField(choices=User.Role.choices, default=User.Role.CLIENT)
+    credential = serializers.CharField(help_text="Google JWT ID Token from the front-end")
