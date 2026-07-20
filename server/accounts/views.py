@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
     # Add custom claims to standard payload
-    refresh['role'] = user.role
     refresh['email'] = user.email
     return {
         'refresh': str(refresh),
@@ -151,7 +150,6 @@ class PasswordlessVerifyView(APIView):
         user, created = User.objects.get_or_create(
             email=email,
             defaults={
-                'role': 'client',
                 'first_name': '',
                 'last_name': ''
             }
@@ -182,7 +180,6 @@ class GoogleAuthView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         credential = serializer.validated_data['credential']
-        role = 'client'  # Google users always start as clients; role can be upgraded separately
 
         email = None
         first_name = ""
@@ -235,7 +232,6 @@ class GoogleAuthView(APIView):
         user, created = User.objects.get_or_create(
             email=email,
             defaults={
-                'role': role,
                 'first_name': first_name,
                 'last_name': last_name
             }

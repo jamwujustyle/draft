@@ -53,7 +53,6 @@ class AuthTests(APITestCase):
         self.assertNotIn("access", verify_response.data)
         self.assertNotIn("refresh", verify_response.data)
         self.assertEqual(verify_response.data["user"]["email"], "new_client@example.com")
-        self.assertEqual(verify_response.data["user"]["role"], "client")
 
         # HttpOnly cookies are set
         self.assertIn("access_token", verify_response.cookies)
@@ -71,10 +70,9 @@ class AuthTests(APITestCase):
         self.assertTrue(response.cookies["access_token"]["httponly"])
         self.assertTrue(response.cookies["refresh_token"]["httponly"])
         self.assertEqual(response.data["user"]["email"], "google_user@example.com")
-        self.assertEqual(response.data["user"]["role"], "client")
 
     def test_me_endpoint_authenticates_via_cookie(self):
-        user = User.objects.create_user(email="user_me@example.com", role="client")
+        user = User.objects.create_user(email="user_me@example.com")
         refresh = RefreshToken.for_user(user)
         self.client.cookies['access_token'] = str(refresh.access_token)
 
@@ -83,7 +81,7 @@ class AuthTests(APITestCase):
         self.assertEqual(response.data["user"]["email"], "user_me@example.com")
 
     def test_token_refresh_via_cookie(self):
-        user = User.objects.create_user(email="user_refresh@example.com", role="client")
+        user = User.objects.create_user(email="user_refresh@example.com")
         refresh = RefreshToken.for_user(user)
         self.client.cookies['refresh_token'] = str(refresh)
 
