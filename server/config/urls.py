@@ -16,11 +16,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
+from django.conf import settings
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
+
+    # Testing Playground Frontend served at root
+    path('', TemplateView.as_view(
+        template_name='accounts/index.html',
+        extra_context={'GOOGLE_CLIENT_ID': settings.GOOGLE_CLIENT_ID}
+    ), name='frontend'),
 
     # OpenAPI schema & docs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

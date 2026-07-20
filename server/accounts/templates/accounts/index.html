@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth API Testing Dashboard</title>
+    <!-- Outfit Font for premium, modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --success: #10b981;
+            --error: #ef4444;
+            --accent: #a855f7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 40%);
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Tabs styling */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 24px;
+            gap: 16px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 1.1rem;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Forms and Inputs */
+        .form-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 1rem;
+            color: var(--text-color);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        button {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Mock Login Section */
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 24px 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .divider:not(:empty)::before {
+            margin-right: 16px;
+        }
+
+        .divider:not(:empty)::after {
+            margin-left: 16px;
+        }
+
+        .secondary-btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .secondary-btn:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .logout-btn {
+            background: var(--error);
+        }
+
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        /* Status & Profile Section */
+        .profile-card {
+            border-left: 4px solid var(--accent);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .status-badge.authenticated {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .status-badge.unauthenticated {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+        }
+
+        pre {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            color: var(--text-color);
+            margin-top: 16px;
+        }
+
+        /* Toast system */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1000;
+        }
+
+        .toast {
+            background: #1f2937;
+            border: 1px solid var(--border-color);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--error);
+        }
+
+        .google-btn-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Auth Playground</h1>
+        <p>Passwordless Verification & Google Sign-In Testing Client</p>
+    </header>
+
+    <!-- Interactive Card for Auth Methods -->
+    <div class="card">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('otp')">Passwordless OTP</div>
+            <div class="tab" onclick="switchTab('google')">Google OAuth2</div>
+        </div>
+
+        <!-- Passwordless OTP Tab -->
+        <div id="otp-tab" class="tab-content active">
+            <!-- Phase 1: Request Code -->
+            <div id="otp-request-section">
+                <div class="form-group">
+                    <label for="otp-email">Email Address</label>
+                    <input type="email" id="otp-email" placeholder="you@example.com" value="testuser@example.com">
+                </div>
+                <button onclick="requestOTP()">Request Login Code</button>
+            </div>
+
+            <!-- Phase 2: Verify Code (Hidden by default) -->
+            <div id="otp-verify-section" style="display: none;">
+                <div class="form-group">
+                    <label for="otp-code">Verification Code</label>
+                    <input type="text" id="otp-code" placeholder="Enter 6-digit code">
+                </div>
+                <button onclick="verifyOTP()">Verify Code & Login</button>
+                <div class="divider">Or</div>
+                <button class="secondary-btn" onclick="resetOTPForm()">Change Email</button>
+            </div>
+        </div>
+
+        <!-- Google OAuth2 Tab -->
+        <div id="google-tab" class="tab-content">
+            <!-- Official Sign In button -->
+            <div class="form-group">
+                <label style="text-align: center;">Official Google Authentication</label>
+                <div class="google-btn-wrapper">
+                    <div id="g_id_onload"
+                         data-client_id="{{ GOOGLE_CLIENT_ID }}"
+                         data-context="signin"
+                         data-ux_mode="popup"
+                         data-callback="handleGoogleResponse"
+                         data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-shape="rectangular"
+                         data-theme="filled_blue"
+                         data-text="signin_with"
+                         data-size="large"
+                         data-logo_alignment="left">
+                    </div>
+                </div>
+            </div>
+
+            <div class="divider">Developer Mock Auth</div>
+
+            <!-- Mock Google Sign In -->
+            <div class="form-group">
+                <label for="mock-email">Mock Email Address</label>
+                <input type="email" id="mock-email" placeholder="mockuser@example.com" value="mockuser@example.com">
+            </div>
+            <button class="secondary-btn" onclick="triggerMockGoogleLogin()">Sign in with Mock Google Token</button>
+        </div>
+    </div>
+
+    <!-- Active Profile & Token Session Status -->
+    <div class="card profile-card">
+        <h2>Session Profile</h2>
+        <div id="auth-status" class="status-badge unauthenticated">Unauthenticated</div>
+
+        <pre id="profile-json">No profile data loaded. Please log in or refresh.</pre>
+
+        <div id="profile-actions" style="margin-top: 20px; display: none; gap: 12px;">
+            <button class="secondary-btn" onclick="checkProfile()">Refresh Profile</button>
+            <button class="logout-btn" onclick="logout()">Log Out</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notifications -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+    // Tab switching logic
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        if (tabId === 'otp') {
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('otp-tab').classList.add('active');
+        } else {
+            document.querySelectorAll('.tab')[1].classList.add('active');
+            document.getElementById('google-tab').classList.add('active');
+        }
+    }
+
+    function resetOTPForm() {
+        document.getElementById('otp-request-section').style.display = 'block';
+        document.getElementById('otp-verify-section').style.display = 'none';
+        document.getElementById('otp-code').value = '';
+    }
+
+    // Show custom toast notification
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerText = message;
+        container.appendChild(toast);
+
+        // Trigger transition
+        setTimeout(() => toast.classList.add('show'), 50);
+
+        // Remove after duration
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // API URL helpers
+    const API_BASE = '/api/auth';
+
+    // Phase 1: Request OTP
+    async function requestOTP() {
+        const email = document.getElementById('otp-email').value;
+        if (!email) return showToast('Please enter an email address', 'error');
+
+        try {
+            const res = await fetch(`${API_BASE}/passwordless/request/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                showToast('OTP request sent successfully!');
+                document.getElementById('otp-request-section').style.display = 'none';
+                document.getElementById('otp-verify-section').style.display = 'block';
+
+                // In debug mode, prefill the code for extreme convenience
+                if (data.code) {
+                    document.getElementById('otp-code').value = data.code;
+                    showToast(`Prefilled code: ${data.code} (Debug mode)`);
+                }
+            } else {
+                showToast(data.error || 'Failed to request OTP code', 'error');
+            }
+        } catch (err) {
+            showToast('Network error requested OTP', 'error');
+        }
+    }
+
+    // Phase 2: Verify OTP
+    async function verifyOTP() {
+        const email = document.getElementById('otp-email').value;
+        const code = document.getElementById('otp-code').value;
+        if (!code) return showToast('Please enter the verification code', 'error');
+
+        try {
+            const res = await fetch(`${API_BASE}/passwordless/verify/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, code })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                showToast('Logged in successfully!');
+                updateProfileUI(data);
+                resetOTPForm();
+            } else {
+                showToast(data.error || 'Verification failed', 'error');
+            }
+        } catch (err) {
+            showToast('Network error during verification', 'error');
+        }
+    }
+
+    // Google Callback Handling
+    async function handleGoogleResponse(response) {
+        const credential = response.credential;
+        await submitGoogleAuth(credential);
+    }
+
+    async function triggerMockGoogleLogin() {
+        const email = document.getElementById('mock-email').value;
+        if (!email) return showToast('Please enter a mock email address', 'error');
+        await submitGoogleAuth(`mock_google_token_${email}`);
+    }
+
+    async function submitGoogleAuth(credential) {
+        try {
+            const res = await fetch(`${API_BASE}/google/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                showToast('Successfully authenticated via Google!');
+                updateProfileUI(data);
+            } else {
+                showToast(data.error || 'Google login failed', 'error');
+            }
+        } catch (err) {
+            showToast('Network error during Google OAuth', 'error');
+        }
+    }
+
+    // Profile check
+    async function checkProfile() {
+        try {
+            const res = await fetch(`${API_BASE}/me/`, {
+                method: 'GET',
+                // Important to pass HttpOnly cookies automatically
+                credentials: 'same-origin'
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                updateProfileUI(data);
+            } else {
+                // If it fails (e.g. 401 Unauthorized), we might try to refresh tokens
+                if (res.status === 401) {
+                    await attemptTokenRefresh();
+                } else {
+                    setLoggedOutUI();
+                }
+            }
+        } catch (err) {
+            setLoggedOutUI();
+        }
+    }
+
+    // Refresh JWT
+    async function attemptTokenRefresh() {
+        try {
+            const res = await fetch(`${API_BASE}/token/refresh/`, {
+                method: 'POST',
+                credentials: 'same-origin'
+            });
+
+            if (res.ok) {
+                showToast('Token refreshed automatically!');
+                await checkProfile();
+            } else {
+                setLoggedOutUI();
+            }
+        } catch (err) {
+            setLoggedOutUI();
+        }
+    }
+
+    // Logout
+    async function logout() {
+        try {
+            const res = await fetch(`${API_BASE}/logout/`, {
+                method: 'POST',
+                credentials: 'same-origin'
+            });
+
+            if (res.ok) {
+                showToast('Logged out successfully');
+                setLoggedOutUI();
+            } else {
+                showToast('Logout request failed', 'error');
+            }
+        } catch (err) {
+            showToast('Network error during logout', 'error');
+        }
+    }
+
+    // UI Updates
+    function updateProfileUI(data) {
+        const badge = document.getElementById('auth-status');
+        const pre = document.getElementById('profile-json');
+        const actions = document.getElementById('profile-actions');
+
+        badge.className = 'status-badge authenticated';
+        badge.innerText = 'Authenticated';
+
+        pre.innerText = JSON.stringify(data, null, 4);
+        actions.style.display = 'flex';
+    }
+
+    function setLoggedOutUI() {
+        const badge = document.getElementById('auth-status');
+        const pre = document.getElementById('profile-json');
+        const actions = document.getElementById('profile-actions');
+
+        badge.className = 'status-badge unauthenticated';
+        badge.innerText = 'Unauthenticated';
+
+        pre.innerText = 'No profile data loaded. Please log in or refresh.';
+        actions.style.display = 'none';
+    }
+
+    // Check profile state when loaded
+    window.addEventListener('load', checkProfile);
+</script>
+
+</body>
+</html>
